@@ -2,7 +2,7 @@
 
 /*
  * Estilo: el mismo de FIA (tipografía del sistema, superficies de vidrio sobre luz suave)
- * con el rosa de RHA (estilo Salud de Apple). Modo oscuro automático desde las 18:00: lo decide data-tema en <html>.
+ * con el índigo de RHA. Modo oscuro automático desde las 18:00: lo decide data-tema en <html>.
  */
 @theme {
   --color-fondo: #f2f3f7;
@@ -10,14 +10,14 @@
   --color-tinta-suave: #5f5f66;
   --color-tinta-tenue: #6a6a72;
   --color-linea: rgb(60 60 67 / 0.14);
-  --color-acento: #c8103e;
-  --color-acento-oscuro: #a30d33;
+  --color-acento: #4f46e5;
+  --color-acento-oscuro: #4338ca;
   --color-sobre-acento: #ffffff;
-  --color-acento-suave: rgb(200 16 62 / 0.09);
+  --color-acento-suave: rgb(79 70 229 / 0.1);
   --color-verde: #117a45;
   --color-rojo: #c62a22;
   --color-campo: rgb(255 255 255 / 0.85);
-  --color-grafico: #c8103e;
+  --color-grafico: #4f46e5;
   --color-agua: #16798a;
   --color-grilla: rgb(60 60 67 / 0.1);
 
@@ -36,7 +36,7 @@
   --vidrio-sombra: rgb(20 30 70 / 0.2);
   --leve: rgb(255 255 255 / 0.72);
   --leve-borde: rgb(255 255 255 / 0.7);
-  --luz-1: rgb(255 180 200 / 0.42);
+  --luz-1: rgb(165 180 252 / 0.45);
   --luz-2: rgb(170 236 208 / 0.4);
   --luz-3: rgb(210 194 255 / 0.45);
   color-scheme: light;
@@ -48,14 +48,14 @@
   --color-tinta-suave: #b4b4bd;
   --color-tinta-tenue: #8d8d97;
   --color-linea: rgb(235 235 245 / 0.14);
-  --color-acento: #ff4f7b;
-  --color-acento-oscuro: #ff2d63;
-  --color-sobre-acento: #1f0610;
-  --color-acento-suave: rgb(255 79 123 / 0.15);
+  --color-acento: #818cf8;
+  --color-acento-oscuro: #6366f1;
+  --color-sobre-acento: #0b0a24;
+  --color-acento-suave: rgb(129 140 248 / 0.16);
   --color-verde: #4ade80;
   --color-rojo: #f87171;
   --color-campo: rgb(255 255 255 / 0.07);
-  --color-grafico: #ff4f7b;
+  --color-grafico: #818cf8;
   --color-agua: #4fd1e0;
   --color-grilla: rgb(235 235 245 / 0.1);
 
@@ -66,7 +66,7 @@
   --vidrio-sombra: rgb(0 0 0 / 0.5);
   --leve: rgb(255 255 255 / 0.06);
   --leve-borde: rgb(255 255 255 / 0.08);
-  --luz-1: rgb(200 16 62 / 0.22);
+  --luz-1: rgb(79 70 229 / 0.26);
   --luz-2: rgb(20 120 100 / 0.2);
   --luz-3: rgb(90 70 180 / 0.24);
   color-scheme: dark;

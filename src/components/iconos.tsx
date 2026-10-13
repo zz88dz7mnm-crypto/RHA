@@ -10,13 +10,14 @@ const base = {
   "aria-hidden": true,
 };
 
-/** El logo de RHA: un corazón con un tilde, como "hecho". */
+/** El logo de RHA: un calendario con un tilde, como "hecho". */
 export function Logo({ className = "size-10" }: Props) {
   return (
     <span className={`grid shrink-0 place-items-center rounded-[28%] bg-acento text-sobre-acento ${className}`} aria-hidden="true">
-      <svg viewBox="0 0 24 24" className="size-[62%]" fill="currentColor">
-        <path d="M12 20.5s-7.5-4.4-7.5-10.1A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8c0 5.7-7.5 10.1-7.5 10.1Z" />
-        <path d="m8.8 12.4 2.2 2.2 4.3-4.4" fill="none" stroke="var(--color-acento)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <svg viewBox="0 0 24 24" className="size-[62%]" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3.5" y="5" width="17" height="15.5" rx="3" />
+        <path d="M3.5 10h17M8 3v4M16 3v4" />
+        <path d="m9 15 2 2 4-4" />
       </svg>
     </span>
   );
@@ -54,7 +55,8 @@ export function IconoAgenda({ className = "size-6" }: Props) {
 export function IconoHabitos({ className = "size-6" }: Props) {
   return (
     <svg {...base} className={className}>
-      <path d="M12 20.5s-7.5-4.4-7.5-10.1A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.5 2.8c0 5.7-7.5 10.1-7.5 10.1Z" />
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="m8.5 12.2 2.4 2.4 4.6-4.8" />
     </svg>
   );
 }
