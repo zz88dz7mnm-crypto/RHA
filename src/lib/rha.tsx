@@ -23,7 +23,8 @@ type Acciones = {
   pausar(habito: Habito): void;
   retomar(habito: Habito): void;
   /** `null` borra el registro del día (vuelve a "sin marcar"). */
-  marcar(habitoId: string, fecha: string, estado: EstadoRegistro | null): void;
+  /** `valor`: lo medido (el peso). Sin pasarlo, se conserva el que había. */
+  marcar(habitoId: string, fecha: string, estado: EstadoRegistro | null, valor?: number | null): void;
   guardarCategoria(c: Categoria): void;
   borrarCategoria(id: string): Promise<void>;
   guardarAjustes(cambios: Partial<Ajustes>): void;
@@ -173,7 +174,7 @@ export function ProveedorRha({ repo, salir, children }: { repo: Repositorio; sal
         });
       },
 
-      marcar(habitoId, fecha, estado) {
+      marcar(habitoId, fecha, estado, valor) {
         const previo = carga.estado === "lista" ? carga.registros.find((r) => r.habitoId === habitoId && r.fecha === fecha) : undefined;
         const clave = `reg:${habitoId}:${fecha}`;
         if (estado === null) {
@@ -181,7 +182,7 @@ export function ProveedorRha({ repo, salir, children }: { repo: Repositorio; sal
           persistir(clave, () => repo.borrarRegistro(habitoId, fecha));
           return;
         }
-        const r: Registro = { habitoId, fecha, estado, nota: previo?.nota ?? "" };
+        const r: Registro = { habitoId, fecha, estado, nota: previo?.nota ?? "", valor: valor === undefined ? (previo?.valor ?? null) : valor };
         cambiar((d) => ({ ...d, registros: [...d.registros.filter((x) => !(x.habitoId === habitoId && x.fecha === fecha)), r] }));
         persistir(clave, () => repo.guardarRegistro(r));
       },

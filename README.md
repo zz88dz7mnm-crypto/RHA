@@ -5,7 +5,7 @@ Registro de Hábitos y Agenda: la fase 3 del ecosistema SIVA. App propia (repo, 
 - **Hoy**: anillos de hábitos y actividades del día, agenda (con y sin horario), hábitos para marcar, vencidas y próximos días.
 - **Semana**: calendario de lunes a domingo, navegable.
 - **Agenda**: lista vertical desde hoy; las tareas sin horario van en su bloque de cada día. Filtro por categoría.
-- **Hábitos**: días fijos o N veces por semana; completado, parcial o no completado; rachas; pausa (no cuenta incumplimientos); archivo. Los suplementos se marcan con «Lo tomé». La primera vez se eligen de una lista armada con la rutina del usuario.
+- **Hábitos**: días fijos o N veces por semana; completado, parcial o no completado; rachas; pausa (no cuenta incumplimientos); archivo. Los suplementos se marcan con «Lo tomé». «Pesarme» pide los kilos al marcarlo y muestra cómo cambia el peso. La lista del usuario (sueño, gimnasio, estudio, meditación, investigar, celular, planificación, suplementos y peso) se activa desde «Mis hábitos».
 - **Vencidos**: lo pendiente con fecha pasada. Nunca se reprograma solo: se propone un día y se decide.
 - **Panel**: adherencia (siempre con denominador), actividades completadas/pendientes/vencidas/canceladas, tiempo planificado por categoría y rachas.
 - **Ajustes**: notificaciones, horarios de los resúmenes, categorías y tema.

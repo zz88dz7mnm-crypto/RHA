@@ -33,6 +33,7 @@ type FilaHabito = {
   categoria_id: string | null;
   suplemento: boolean;
   hora: string | null;
+  medicion: Habito["medicion"] | null;
   estado: Habito["estado"];
   desde: string;
   orden: number;
@@ -155,7 +156,7 @@ export function repositorioSupabase(db: SupabaseClient, usuarioId: string): Repo
       const filas = await todas<FilaHabito>((a, b) =>
         db
           .from("rha_habitos")
-          .select("id, nombre, tipo, dias, meta_semanal, categoria_id, suplemento, hora, estado, desde, orden")
+          .select("id, nombre, tipo, dias, meta_semanal, categoria_id, suplemento, hora, medicion, estado, desde, orden")
           .eq("usuario_id", usuarioId)
           .order("orden")
           .order("id")
@@ -170,6 +171,7 @@ export function repositorioSupabase(db: SupabaseClient, usuarioId: string): Repo
         categoriaId: f.categoria_id,
         suplemento: f.suplemento,
         hora: hora(f.hora),
+        medicion: f.medicion ?? null,
         estado: f.estado,
         desde: f.desde,
         orden: f.orden,
@@ -189,6 +191,7 @@ export function repositorioSupabase(db: SupabaseClient, usuarioId: string): Repo
           categoria_id: h.categoriaId,
           suplemento: h.suplemento,
           hora: h.hora,
+          medicion: h.medicion,
           estado: h.estado,
           desde: h.desde,
           orden: h.orden,
@@ -218,16 +221,20 @@ export function repositorioSupabase(db: SupabaseClient, usuarioId: string): Repo
     },
 
     async registros() {
-      const filas = await todas<{ habito_id: string; fecha: string; estado: Registro["estado"]; nota: string }>((a, b) =>
-        db.from("rha_registros").select("habito_id, fecha, estado, nota").eq("usuario_id", usuarioId).order("fecha").order("habito_id").range(a, b),
+      const filas = await todas<{ habito_id: string; fecha: string; estado: Registro["estado"]; nota: string; valor: number | string | null }>((a, b) =>
+        db.from("rha_registros").select("habito_id, fecha, estado, nota, valor").eq("usuario_id", usuarioId).order("fecha").order("habito_id").range(a, b),
       );
-      return filas.map((f) => ({ habitoId: f.habito_id, fecha: f.fecha, estado: f.estado, nota: f.nota }));
+      // Postgres devuelve los numeric como texto.
+      return filas.map((f) => ({ habitoId: f.habito_id, fecha: f.fecha, estado: f.estado, nota: f.nota, valor: f.valor === null ? null : Number(f.valor) }));
     },
 
     async guardarRegistro(r) {
       const { error } = await db
         .from("rha_registros")
-        .upsert({ usuario_id: usuarioId, habito_id: r.habitoId, fecha: r.fecha, estado: r.estado, nota: r.nota }, { onConflict: "habito_id,fecha" });
+        .upsert(
+          { usuario_id: usuarioId, habito_id: r.habitoId, fecha: r.fecha, estado: r.estado, nota: r.nota, valor: r.valor },
+          { onConflict: "habito_id,fecha" },
+        );
       fallar(error);
     },
 

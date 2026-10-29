@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { sumarDias } from "@/lib/fechas";
+import { fechaCorta, sumarDias } from "@/lib/fechas";
 import { adherencia, avanceSemanal, programadoEn, racha, registroDe, textoFrecuencia } from "@/lib/habitos";
 import { useDatos } from "@/lib/rha";
 import type { Habito } from "@/lib/tipos";
 import { ElegirSugeridos, FormHabito } from "../FormHabito";
 import { IconoLlama, IconoPastilla } from "../iconos";
-import { Anillo } from "../Piezas";
+import { GraficoLinea } from "../Grafico";
+import { Anillo, kg } from "../Piezas";
 import { Boton, cx, Encabezado, Tarjeta, Vacio } from "../ui";
 import { BotonAgregar } from "./VistaHoy";
 
@@ -52,7 +53,7 @@ export function VistaHabitos() {
             ) : null,
           )}
           <button type="button" onClick={() => setSugeridos(true)} className="text-[15px] font-semibold text-acento">
-            Ver hábitos sugeridos
+            Activar mi lista de hábitos
           </button>
         </div>
       )}
@@ -98,7 +99,8 @@ function TarjetaHabito({ habito, onAbrir }: { habito: Habito; onAbrir: () => voi
           </span>
         )}
       </button>
-      {habito.estado === "activo" && (
+      {habito.medicion === "peso" && <EvolucionPeso habito={habito} />}
+      {habito.estado === "activo" && habito.medicion !== "peso" && (
         <div className="mt-3 flex justify-between gap-1" role="group" aria-label="Últimos 7 días">
           {semana.map((fecha) => {
             const estado = registroDe(registros, habito.id, fecha)?.estado;
@@ -132,5 +134,40 @@ function TarjetaHabito({ habito, onAbrir }: { habito: Habito; onAbrir: () => voi
         </div>
       )}
     </article>
+  );
+}
+
+/** El peso anotado cada vez que se marcó "Pesarme": último valor, cambio y gráfico. Se carga desde Hoy. */
+function EvolucionPeso({ habito }: { habito: Habito }) {
+  const { registros, hoy } = useDatos();
+  const puntos = registros
+    .filter((r) => r.habitoId === habito.id && r.valor !== null)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+    .map((r) => ({ fecha: r.fecha, valor: r.valor! }));
+  if (puntos.length === 0) return <p className="mt-3 text-[13px] text-tinta-tenue">Todavía no anotaste tu peso. Se anota al marcarlo en Hoy.</p>;
+  const ultimo = puntos.at(-1)!;
+  const primero = puntos[0];
+  const cambio = Math.round((ultimo.valor - primero.valor) * 10) / 10;
+  return (
+    <div className="mt-3">
+      <p className="cifras text-[14px]">
+        <span className="font-semibold">{kg(ultimo.valor)}</span>
+        <span className="text-tinta-suave">
+          {" "}
+          · {fechaCorta(ultimo.fecha, hoy)}
+          {puntos.length > 1 ? ` · ${cambio > 0 ? "+" : ""}${kg(cambio)} desde el ${fechaCorta(primero.fecha, hoy)}` : ""}
+        </span>
+      </p>
+      {puntos.length > 1 && (
+        <div className="mt-2">
+          <GraficoLinea
+            nombre={`Peso de ${habito.nombre}`}
+            alto={140}
+            formato={kg}
+            puntos={puntos.map((p) => ({ etiqueta: fechaCorta(p.fecha, hoy), valor: p.valor }))}
+          />
+        </div>
+      )}
+    </div>
   );
 }

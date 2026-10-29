@@ -104,12 +104,13 @@ export async function datosDeUsuario(db: SupabaseClient, usuarioId: string, hoy:
         categoriaId: f.categoria_id,
         suplemento: f.suplemento,
         hora: hora(f.hora),
+        medicion: null,
         estado: f.estado,
         desde: f.desde,
         orden: f.orden,
       }),
     ),
     pausas: (pau.data ?? []).map((f): Pausa => ({ id: f.id, habitoId: f.habito_id, desde: f.desde, hasta: f.hasta })),
-    registros: (reg.data ?? []).map((f): Registro => ({ habitoId: f.habito_id, fecha: f.fecha, estado: f.estado, nota: f.nota })),
+    registros: (reg.data ?? []).map((f): Registro => ({ habitoId: f.habito_id, fecha: f.fecha, estado: f.estado, nota: f.nota, valor: null })),
   };
 }

@@ -28,6 +28,7 @@ function Formulario({ habito, onCerrar }: { habito: Habito | null; onCerrar: () 
   const [suplemento, setSuplemento] = useState(habito?.suplemento ?? false);
   const [conHora, setConHora] = useState(!!habito?.hora);
   const [hora, setHora] = useState(habito?.hora ?? "09:00");
+  const [conPeso, setConPeso] = useState(habito?.medicion === "peso");
   const [error, setError] = useState("");
   const [confirmar, setConfirmar] = useState(false);
   const [ocupado, setOcupado] = useState(false);
@@ -45,6 +46,7 @@ function Formulario({ habito, onCerrar }: { habito: Habito | null; onCerrar: () 
         categoriaId,
         suplemento,
         hora: conHora ? hora : null,
+        medicion: conPeso ? "peso" : null,
         estado: habito?.estado ?? "activo",
         desde: habito?.desde ?? hoy,
         orden: habito?.orden ?? habitos.length,
@@ -163,6 +165,14 @@ function Formulario({ habito, onCerrar }: { habito: Habito | null; onCerrar: () 
         <input type="checkbox" checked={suplemento} onChange={(e) => setSuplemento(e.target.checked)} className="size-5 accent-[var(--color-acento)]" />
       </label>
 
+      <label className="flex items-center justify-between gap-3 text-[15px] font-medium">
+        <span>
+          Anotar el peso al marcarlo
+          <span className="block text-[13px] font-normal text-tinta-tenue">Para «Pesarme»: guarda los kilos y muestra cómo cambian.</span>
+        </span>
+        <input type="checkbox" checked={conPeso} onChange={(e) => setConPeso(e.target.checked)} className="size-5 accent-[var(--color-acento)]" />
+      </label>
+
       <div className="grid gap-2">
         <label className="flex items-center justify-between gap-3 text-[15px] font-medium">
           Recordatorio
@@ -253,16 +263,21 @@ function Formulario({ habito, onCerrar }: { habito: Habito | null; onCerrar: () 
   );
 }
 
-/** La primera vez: elegir cuáles de los hábitos sugeridos activar. Vienen tildados los fundamentales. */
+/**
+ * Activar la lista de hábitos del usuario. Vienen todos tildados.
+ * Los hábitos que ya tenía y no están en la lista se pueden archivar (su historial queda).
+ */
 export function ElegirSugeridos({ abierta, onCerrar }: { abierta: boolean; onCerrar: () => void }) {
   const { hoy, habitos, categorias, guardarHabitos } = useDatos();
-  const existentes = new Set(habitos.map((h) => h.nombre.toLowerCase()));
+  const existentes = new Set(habitos.filter((h) => h.estado !== "archivado").map((h) => h.nombre.toLowerCase()));
   const disponibles = SUGERIDOS.filter((s) => !existentes.has(s.nombre.toLowerCase()));
-  const [elegidos, setElegidos] = useState(() => new Set(disponibles.filter((s) => s.recomendado).map((s) => s.nombre)));
-  const grupos = ["Fundamentales", "Semanales", "Para sumar de a poco"] as const;
+  const fuera = habitos.filter((h) => h.estado !== "archivado" && !SUGERIDOS.some((s) => s.nombre.toLowerCase() === h.nombre.toLowerCase()));
+  const [elegidos, setElegidos] = useState(() => new Set(disponibles.map((s) => s.nombre)));
+  const [archivar, setArchivar] = useState(true);
+  const grupos = ["Todos los días", "Por semana"] as const;
 
   function activar() {
-    const lista: Habito[] = disponibles
+    const nuevos: Habito[] = disponibles
       .filter((s) => elegidos.has(s.nombre))
       .map((s: Sugerido, i) => ({
         id: nuevoId(),
@@ -273,20 +288,22 @@ export function ElegirSugeridos({ abierta, onCerrar }: { abierta: boolean; onCer
         categoriaId: categorias.find((c) => c.nombre === s.categoria)?.id ?? null,
         suplemento: s.suplemento,
         hora: s.hora,
+        medicion: s.medicion,
         estado: "activo",
         desde: hoy,
         orden: habitos.length + i,
       }));
-    guardarHabitos(lista);
+    const archivados: Habito[] = archivar ? fuera.map((h) => ({ ...h, estado: "archivado" })) : [];
+    guardarHabitos([...nuevos, ...archivados]);
     onCerrar();
   }
 
+  const total = elegidos.size + (archivar ? fuera.length : 0);
+
   return (
-    <Hoja abierta={abierta} titulo="Elegí tus hábitos" onCerrar={onCerrar}>
-      <p className="text-[15px] leading-snug text-tinta-suave">
-        Armados con lo que contaste de tu rutina. Vienen marcados los fundamentales: la idea es que esos salgan aunque estés cansado, y sumar el resto de a
-        poco. Después podés cambiar días, horas y recordatorios.
-      </p>
+    <Hoja abierta={abierta} titulo="Mis hábitos" onCerrar={onCerrar}>
+      <p className="text-[15px] leading-snug text-tinta-suave">Tu lista. Después podés cambiar días, horas y recordatorios de cada uno.</p>
+      {disponibles.length === 0 && <p className="mt-4 text-[15px]">Ya tenés activos todos los hábitos de tu lista.</p>}
       {grupos.map((g) => {
         const lista = disponibles.filter((s) => s.grupo === g);
         if (!lista.length) return null;
@@ -313,16 +330,11 @@ export function ElegirSugeridos({ abierta, onCerrar }: { abierta: boolean; onCer
                     <span className="min-w-0">
                       <span className="block text-[15px] font-semibold">{s.nombre}</span>
                       <span className="block text-[13px] text-tinta-suave">
-                        {s.tipo === "semanal"
-                          ? `${s.metaSemanal} veces por semana`
-                          : s.dias.length === 7
-                            ? "Todos los días"
-                            : s.dias.length === 5
-                              ? "De lunes a viernes"
-                              : "Domingos"}
+                        {s.tipo === "semanal" ? (s.metaSemanal === 1 ? "1 vez por semana" : `${s.metaSemanal} veces por semana`) : "Todos los días"}
                         {s.hora ? ` · aviso ${s.hora}` : ""}
                         {s.suplemento ? " · suplemento" : ""}
                       </span>
+                      {s.detalle && <span className="block text-[13px] text-tinta-tenue">{s.detalle}</span>}
                     </span>
                   </label>
                 </li>
@@ -331,9 +343,26 @@ export function ElegirSugeridos({ abierta, onCerrar }: { abierta: boolean; onCer
           </fieldset>
         );
       })}
-      <Boton className="sticky bottom-0 mt-6 w-full" onClick={activar} disabled={elegidos.size === 0}>
-        Activar {elegidos.size} {elegidos.size === 1 ? "hábito" : "hábitos"}
-      </Boton>
+      {fuera.length > 0 && (
+        <label className="mt-5 flex items-start gap-3 rounded-2xl bg-tinta/5 px-4 py-3">
+          <input
+            type="checkbox"
+            checked={archivar}
+            onChange={(e) => setArchivar(e.target.checked)}
+            className="mt-0.5 size-5 shrink-0 accent-[var(--color-acento)]"
+          />
+          <span className="text-[14px]">
+            <span className="block font-semibold">Archivar los que no están en la lista</span>
+            <span className="block text-tinta-suave">{fuera.map((h) => h.nombre).join(", ")}. Dejan de aparecer, pero su historial queda.</span>
+          </span>
+        </label>
+      )}
+      {total > 0 && (
+        <Boton className="sticky bottom-0 mt-6 w-full" onClick={activar}>
+          {elegidos.size ? `Activar ${elegidos.size} ${elegidos.size === 1 ? "hábito" : "hábitos"}` : "Archivar"}
+          {elegidos.size && archivar && fuera.length ? ` y archivar ${fuera.length}` : ""}
+        </Boton>
+      )}
     </Hoja>
   );
 }

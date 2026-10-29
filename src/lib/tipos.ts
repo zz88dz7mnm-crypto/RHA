@@ -38,6 +38,8 @@ export type Habito = {
   suplemento: boolean;
   /** Hora del recordatorio, si tiene. */
   hora: string | null;
+  /** "peso": al marcarlo se anota un valor (kilos). */
+  medicion: "peso" | null;
   estado: EstadoHabito;
   /** Desde qué día cuenta. */
   desde: string;
@@ -48,7 +50,13 @@ export type Habito = {
 export type Pausa = { id: string; habitoId: string; desde: string; hasta: string | null };
 
 export type EstadoRegistro = "completado" | "parcial" | "no_completado";
-export type Registro = { habitoId: string; fecha: string; estado: EstadoRegistro; nota: string };
+export type Registro = {
+  habitoId: string;
+  fecha: string;
+  estado: EstadoRegistro;
+  nota: string;
+  /** El valor medido (kilos, para el peso). */ valor: number | null;
+};
 
 export type Ajustes = {
   /** A qué hora avisar de las tareas sin horario del día. */

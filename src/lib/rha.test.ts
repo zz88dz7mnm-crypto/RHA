@@ -29,12 +29,13 @@ const hab = (id: string, cambios: Partial<Habito> = {}): Habito => ({
   categoriaId: null,
   suplemento: false,
   hora: null,
+  medicion: null,
   estado: "activo",
   desde: "2026-09-01",
   orden: 0,
   ...cambios,
 });
-const reg = (habitoId: string, fecha: string, estado: Registro["estado"] = "completado"): Registro => ({ habitoId, fecha, estado, nota: "" });
+const reg = (habitoId: string, fecha: string, estado: Registro["estado"] = "completado"): Registro => ({ habitoId, fecha, estado, nota: "", valor: null });
 
 describe("hábitos", () => {
   it("sabe el día de la semana", () => {

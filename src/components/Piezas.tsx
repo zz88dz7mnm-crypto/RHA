@@ -4,7 +4,7 @@ import { useState } from "react";
 import { textoDuracion, aMinutos } from "@/lib/agenda";
 import { avanceSemanal, racha, registroDe } from "@/lib/habitos";
 import { useDatos } from "@/lib/rha";
-import type { Actividad, EstadoRegistro, Habito } from "@/lib/tipos";
+import type { Actividad, EstadoRegistro, Habito, Registro } from "@/lib/tipos";
 import { IconoCampana, IconoCheck, IconoLlama, IconoPastilla, IconoRepetir } from "./iconos";
 import { cx } from "./ui";
 
@@ -60,6 +60,57 @@ export function FilaActividad({ actividad, onAbrir, mostrarFecha }: { actividad:
   );
 }
 
+/** "78,4 kg". */
+export const kg = (n: number) => `${n.toLocaleString("es-AR", { maximumFractionDigits: 2 })} kg`;
+
+/** El último valor anotado de un hábito con medición (el peso más reciente). */
+export function ultimoValor(registros: Registro[], habitoId: string): { fecha: string; valor: number } | null {
+  let ultimo: { fecha: string; valor: number } | null = null;
+  for (const r of registros)
+    if (r.habitoId === habitoId && r.valor !== null && (!ultimo || r.fecha > ultimo.fecha)) ultimo = { fecha: r.fecha, valor: r.valor };
+  return ultimo;
+}
+
+/** Pide los kilos al marcar "Pesarme". Acepta coma o punto. */
+function IngresoPeso({ inicial, onGuardar, onCancelar }: { inicial: number | null; onGuardar: (kg: number) => void; onCancelar: () => void }) {
+  const [texto, setTexto] = useState("");
+  const [error, setError] = useState("");
+  return (
+    <form
+      className="mt-2 ml-13 grid min-w-0 gap-1.5"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const n = Number(texto.trim().replace(",", "."));
+        if (!texto.trim() || !Number.isFinite(n) || n <= 20 || n >= 400) return setError("Escribí tu peso en kilos, por ejemplo 76,5.");
+        onGuardar(Math.round(n * 100) / 100);
+      }}
+    >
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <input
+          inputMode="decimal"
+          autoFocus
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+          placeholder={inicial ? `La última vez: ${String(inicial).replace(".", ",")}` : "Kilos, ej.: 76,5"}
+          aria-label="Peso en kilos"
+          className="cifras h-10 w-full min-w-0 rounded-xl border border-linea bg-campo px-3 text-[16px] outline-none focus:border-acento"
+        />
+        <button type="submit" className="h-10 rounded-full bg-acento px-4 text-[14px] font-semibold text-sobre-acento">
+          Guardar
+        </button>
+        <button type="button" onClick={onCancelar} className="px-2 text-[14px] font-semibold text-tinta-suave">
+          Cancelar
+        </button>
+      </div>
+      {error && (
+        <p role="alert" className="text-[13px] text-rojo">
+          {error}
+        </p>
+      )}
+    </form>
+  );
+}
+
 const ETIQUETA: Record<EstadoRegistro, string> = { completado: "Completado", parcial: "Parcial", no_completado: "No lo hice" };
 
 /**
@@ -69,7 +120,11 @@ const ETIQUETA: Record<EstadoRegistro, string> = { completado: "Completado", par
 export function FilaHabito({ habito, fecha, onEditar }: { habito: Habito; fecha: string; onEditar?: () => void }) {
   const { registros, pausas, categorias, hoy, marcar } = useDatos();
   const [menu, setMenu] = useState(false);
-  const estado = registroDe(registros, habito.id, fecha)?.estado;
+  const [pidiendoPeso, setPidiendoPeso] = useState(false);
+  const registro = registroDe(registros, habito.id, fecha);
+  const estado = registro?.estado;
+  const conPeso = habito.medicion === "peso";
+  const ultimoPeso = conPeso ? ultimoValor(registros, habito.id) : null;
   const cat = categorias.find((c) => c.id === habito.categoriaId);
   const color = cat?.color ?? "var(--color-acento)";
   const semanal = habito.tipo === "semanal" ? avanceSemanal(habito, registros, fecha) : null;
@@ -80,7 +135,9 @@ export function FilaHabito({ habito, fecha, onEditar }: { habito: Habito; fecha:
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={() => marcar(habito.id, fecha, estado === "completado" ? null : "completado")}
+          onClick={() =>
+            estado === "completado" ? marcar(habito.id, fecha, null) : conPeso ? setPidiendoPeso((x) => !x) : marcar(habito.id, fecha, "completado")
+          }
           aria-pressed={estado === "completado"}
           aria-label={
             estado === "completado"
@@ -115,6 +172,12 @@ export function FilaHabito({ habito, fecha, onEditar }: { habito: Habito; fecha:
             ) : (
               <span>{habito.suplemento ? "¿Lo tomaste?" : "Pendiente"}</span>
             )}
+            {conPeso &&
+              (registro?.valor ? (
+                <span className="cifras font-semibold">{kg(registro.valor)}</span>
+              ) : (
+                ultimoPeso && <span className="cifras">Último: {kg(ultimoPeso.valor)}</span>
+              ))}
             {r.valor > 1 && (
               <span className="inline-flex items-center gap-0.5 font-semibold" style={{ color }}>
                 <IconoLlama className="size-3.5" /> {r.valor} {r.unidad}
@@ -133,6 +196,16 @@ export function FilaHabito({ habito, fecha, onEditar }: { habito: Habito; fecha:
           ···
         </button>
       </div>
+      {pidiendoPeso && (
+        <IngresoPeso
+          inicial={registro?.valor ?? ultimoPeso?.valor ?? null}
+          onGuardar={(valor) => {
+            marcar(habito.id, fecha, "completado", valor);
+            setPidiendoPeso(false);
+          }}
+          onCancelar={() => setPidiendoPeso(false)}
+        />
+      )}
       {menu && (
         <div className="mt-2 ml-13 flex flex-wrap gap-2" role="group" aria-label={`Cómo te fue con ${habito.nombre}`}>
           {(["completado", "parcial", "no_completado"] as const).map((e) => (

@@ -1,5 +1,5 @@
 import { lunesDe, sumarDias } from "../fechas";
-import { CATEGORIAS_INICIALES } from "../sugeridos";
+import { CATEGORIAS_INICIALES, SUGERIDOS } from "../sugeridos";
 import { AJUSTES_INICIALES, type Actividad, type Ajustes, type Categoria, type Habito, type Pausa, type Registro } from "../tipos";
 import type { Repositorio } from "./repositorio";
 
@@ -56,27 +56,37 @@ export function datosDeMuestra(hoy: string): Estado {
     categoriaId: null,
     suplemento: false,
     hora: null,
+    medicion: null,
     estado: "activo",
     desde,
     orden: n,
     ...cambios,
   });
-  const habitos = [
-    h(1, { nombre: "Estudiar", dias: [1, 2, 3, 4, 5], categoriaId: cat("Facultad") }),
-    h(2, { nombre: "Creatina", suplemento: true, hora: "10:00", categoriaId: cat("Salud") }),
-    h(3, { nombre: "Cremas de la piel", hora: "23:00", categoriaId: cat("Personal") }),
-    h(4, { nombre: "Acostarme antes de las 00:30", categoriaId: cat("Salud") }),
-    h(5, { nombre: "Gimnasio", tipo: "semanal", dias: [], metaSemanal: 3, categoriaId: cat("Gimnasio") }),
-    h(6, { nombre: "Leer", tipo: "semanal", dias: [], metaSemanal: 3, categoriaId: cat("Personal") }),
-  ];
+  // Los hábitos de la lista del usuario, con dos semanas de registros inventados.
+  const habitos = SUGERIDOS.map((x, i) =>
+    h(i + 1, {
+      nombre: x.nombre,
+      tipo: x.tipo,
+      dias: x.dias,
+      metaSemanal: x.metaSemanal,
+      suplemento: x.suplemento,
+      hora: x.hora,
+      medicion: x.medicion,
+      categoriaId: cat(x.categoria),
+    }),
+  );
   const registros: Registro[] = [];
   for (let d = desde, i = 0; d < hoy; d = sumarDias(d, 1), i++) {
+    const dow = ((new Date(`${d}T12:00:00Z`).getUTCDay() + 6) % 7) + 1;
     for (const x of habitos) {
-      const dow = ((new Date(`${d}T12:00:00Z`).getUTCDay() + 6) % 7) + 1;
+      if (x.medicion === "peso") {
+        if (dow === 7) registros.push({ habitoId: x.id, fecha: d, estado: "completado", nota: "", valor: Math.round((76.2 + i * 0.05) * 10) / 10 });
+        continue;
+      }
       if (x.tipo === "dias" && !x.dias.includes(dow)) continue;
-      if (x.tipo === "semanal" && ![1, 3, 5].includes(dow)) continue;
+      if (x.tipo === "semanal" && ![1, 3, 5].includes(dow) && !(x.metaSemanal! >= 5 && dow <= 5)) continue;
       if ((i + x.orden) % 5 === 0) continue;
-      registros.push({ habitoId: x.id, fecha: d, estado: (i + x.orden) % 7 === 0 ? "parcial" : "completado", nota: "" });
+      registros.push({ habitoId: x.id, fecha: d, estado: (i + x.orden) % 7 === 0 ? "parcial" : "completado", nota: "", valor: null });
     }
   }
   const a = (n: number, cambios: Partial<Actividad>): Actividad => ({

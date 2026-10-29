@@ -76,6 +76,9 @@ create table if not exists public.rha_habitos (
 
 create index if not exists rha_habitos_usuario on public.rha_habitos (usuario_id);
 
+-- Hábitos que llevan un número al marcarlos (por ahora, el peso en kilos).
+alter table public.rha_habitos add column if not exists medicion text check (medicion in ('peso'));
+
 -- Mientras dura una pausa no se cuentan incumplimientos. "hasta" es el día en que se retomó.
 create table if not exists public.rha_pausas (
   id uuid primary key,
@@ -101,6 +104,8 @@ create table if not exists public.rha_registros (
 );
 
 create index if not exists rha_registros_usuario_fecha on public.rha_registros (usuario_id, fecha);
+
+alter table public.rha_registros add column if not exists valor numeric(6, 2) check (valor > 0 and valor < 1000);
 
 -- ──────────────────────── Notificaciones ───────────────────
 -- Un teléfono o compu donde el usuario activó las notificaciones.
