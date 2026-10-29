@@ -1,6 +1,6 @@
 # RHA
 
-Registro de Hábitos y Agenda: la fase 3 del ecosistema SIVA. App propia (repo, Vercel, PWA) que comparte con FIA, GYM y SIVA el proyecto de Supabase y la cuenta.
+Registro de Hábitos y Agenda: la fase 3 del ecosistema SIVA. App propia (repo, Vercel, PWA) que comparte con SIVA el proyecto de Supabase y la cuenta.
 
 - **Hoy**: anillos de hábitos y actividades del día, agenda (con y sin horario), hábitos para marcar, vencidas y próximos días.
 - **Semana**: calendario de lunes a domingo, navegable.
@@ -18,7 +18,7 @@ Registro de Hábitos y Agenda: la fase 3 del ecosistema SIVA. App propia (repo, 
 - `src/app/api/avisos`: la ruta que manda las notificaciones. La llama la base cada minuto (pg_cron) con un secreto; cada aviso tiene una clave y se manda una sola vez.
 - `public/sw.js`: el service worker que muestra las notificaciones.
 - `supabase/schema.sql`: tablas `rha_*`, permisos (RLS) y auditoría. `supabase/avisos.sql`: el disparador de cada minuto.
-- `docs/CONTRATO.md`: qué datos expone RHA a SIVA, GYM y CIA.
+- `docs/CONTRATO.md`: qué datos expone RHA a SIVA.
 
 ## Desarrollo
 
@@ -43,4 +43,4 @@ npm test
 
 - En iPhone las notificaciones necesitan iOS 16.4 o más y la app instalada en la pantalla de inicio.
 - Los avisos salen dentro del minuto (el disparador corre cada minuto); si la base se atrasa, se recuperan hasta 10 minutos tarde, nunca duplicados.
-- La relación con GYM (entrenamientos planificados) y CIA (bloques de estudio) está preparada en la base (`origen`, `origen_ref`) pero se conecta en sus fases.
+- La base está preparada para que otra app cree compromisos en la agenda (`origen`, `origen_ref`) sin duplicarlos.
