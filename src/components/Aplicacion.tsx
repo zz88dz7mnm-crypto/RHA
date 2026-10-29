@@ -62,7 +62,7 @@ function ConDatos({ children }: { children: React.ReactNode }) {
   if (carga.estado === "error") {
     return (
       <main className="grid min-h-dvh place-items-center px-5">
-        <div className="cristal grid max-w-sm gap-4 rounded-[28px] p-6 text-center">
+        <div className="cristal grid max-w-sm gap-4 rounded-[22px] p-6 text-center">
           <p className="text-[17px] font-semibold">No se pudo cargar</p>
           <p role="alert" className="text-[15px] text-tinta-suave">
             {carga.mensaje}

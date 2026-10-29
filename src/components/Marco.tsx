@@ -70,7 +70,7 @@ export function Marco({ children }: { children: React.ReactNode }) {
 
       <nav
         aria-label="Secciones"
-        className="cristal fixed inset-x-3 bottom-[max(env(safe-area-inset-bottom),0.75rem)] z-30 flex rounded-[26px] px-1 py-1 lg:hidden"
+        className="cristal fixed inset-x-3 bottom-[max(env(safe-area-inset-bottom),0.75rem)] z-30 flex rounded-[20px] px-1 py-1 lg:hidden"
       >
         {SECCIONES.filter((s) => s.movil).map(({ ruta: r, nombre, Icono }) => (
           <Link

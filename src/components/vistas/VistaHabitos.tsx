@@ -73,7 +73,7 @@ function TarjetaHabito({ habito, onAbrir }: { habito: Habito; onAbrir: () => voi
   const semanal = habito.tipo === "semanal" ? avanceSemanal(habito, registros, hoy) : null;
 
   return (
-    <article className={cx("cristal rounded-[24px] p-4", habito.estado !== "activo" && "opacity-70")}>
+    <article className={cx("cristal rounded-[18px] p-4", habito.estado !== "activo" && "opacity-70")}>
       <button type="button" onClick={onAbrir} className="flex w-full items-start gap-3 text-left">
         <Anillo valor={semanal ? semanal.hechas : mes.completados} total={semanal ? semanal.meta : mes.programados} color={color} tam={48} grosor={6}>
           {habito.suplemento ? <IconoPastilla className="size-4" /> : null}

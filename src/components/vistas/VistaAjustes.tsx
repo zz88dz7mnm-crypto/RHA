@@ -80,14 +80,13 @@ export function VistaAjustes() {
           <Segmentos<Preferencia>
             etiqueta="Tema"
             opciones={[
-              ["auto", "Automático"],
+              ["auto", "Oscuro"],
               ["claro", "Claro"],
-              ["oscuro", "Oscuro"],
             ]}
             valor={tema}
             onCambiar={setTema}
           />
-          <p className="text-[13px] text-tinta-tenue">Automático: oscuro de 18:00 a 7:00 (hora de Argentina). Se guarda en este dispositivo.</p>
+          <p className="text-[13px] text-tinta-tenue">El vidrio oscuro es el predeterminado. Se guarda en este dispositivo.</p>
         </Tarjeta>
 
         {salir && (

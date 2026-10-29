@@ -24,7 +24,7 @@ export function Hoja({ abierta, titulo, onCerrar, children }: { abierta: boolean
         onCerrar();
       }}
       onClick={(e) => e.target === e.currentTarget && onCerrar()}
-      className="m-0 mt-auto max-h-[92dvh] w-full max-w-none overflow-y-auto rounded-t-[30px] bg-fondo p-0 text-tinta backdrop:bg-black/40 backdrop:backdrop-blur-sm sm:m-auto sm:max-w-lg sm:rounded-[30px]"
+      className="m-0 mt-auto max-h-[92dvh] w-full max-w-none overflow-y-auto rounded-t-[30px] bg-fondo p-0 text-tinta backdrop:bg-black/40 backdrop:backdrop-blur-sm sm:m-auto sm:max-w-lg sm:rounded-[22px]"
     >
       <div className="sticky top-0 z-10 flex items-center justify-between gap-3 bg-fondo/90 px-5 pt-4 pb-3 backdrop-blur">
         <h2 className="text-[20px] font-bold">{titulo}</h2>
