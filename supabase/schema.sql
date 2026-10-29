@@ -1,6 +1,5 @@
 -- RHA · esquema de la base de datos
--- Va en el mismo proyecto de Supabase que FIA y GYM. Todas las tablas empiezan con rha_
--- y no tocan nada de las otras apps. Pegar completo en Supabase → SQL Editor → Run.
+-- Todas las tablas empiezan con rha_. Pegar completo en Supabase → SQL Editor → Run.
 -- Se puede correr más de una vez sin romper nada.
 
 -- ───────────────────────── Ajustes ─────────────────────────
@@ -42,7 +41,7 @@ create table if not exists public.rha_actividades (
   notas text not null default '' check (char_length(notas) <= 2000),
   recordatorio smallint check (recordatorio between 0 and 1440),
   serie_id uuid,
-  -- Para cuando otra app (GYM, CIA) cree compromisos acá: de dónde vino y su id allá.
+  -- Para cuando otra app cree compromisos acá: de dónde vino y su id allá.
   origen text not null default 'manual' check (origen in ('manual', 'gym', 'cia', 'aica')),
   origen_ref text,
   creado_en timestamptz not null default now(),
