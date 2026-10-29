@@ -39,6 +39,9 @@ type FilaHabito = {
   orden: number;
 };
 
+/** Donde se guardan las imágenes de fondo (público: la app no tiene login). */
+const BUCKET_FONDOS = "fondos";
+
 export function repositorioSupabase(db: SupabaseClient, usuarioId: string): Repositorio {
   async function todas<T>(consulta: (desde: number, hasta: number) => PromiseLike<{ data: T[] | null; error: PostgrestError | null }>): Promise<T[]> {
     const filas: T[] = [];
@@ -54,7 +57,8 @@ export function repositorioSupabase(db: SupabaseClient, usuarioId: string): Repo
     async ajustes() {
       const { data, error } = await db
         .from("rha_ajustes")
-        .select("hora_tareas, resumen_diario, hora_resumen, resumen_semanal")
+        // Con "*": si todavía no se corrió el SQL que agrega "fondo", la app sigue andando sin fondo.
+        .select("*")
         .eq("usuario_id", usuarioId)
         .maybeSingle();
       fallar(error);
@@ -68,6 +72,7 @@ export function repositorioSupabase(db: SupabaseClient, usuarioId: string): Repo
         resumenDiario: data.resumen_diario,
         horaResumen: hora(data.hora_resumen)!,
         resumenSemanal: data.resumen_semanal,
+        fondo: data.fondo ?? null,
       };
     },
 
@@ -77,8 +82,22 @@ export function repositorioSupabase(db: SupabaseClient, usuarioId: string): Repo
       if (c.resumenDiario !== undefined) fila.resumen_diario = c.resumenDiario;
       if (c.horaResumen !== undefined) fila.hora_resumen = c.horaResumen;
       if (c.resumenSemanal !== undefined) fila.resumen_semanal = c.resumenSemanal;
+      if (c.fondo !== undefined) fila.fondo = c.fondo;
       const { error } = await db.from("rha_ajustes").upsert(fila, { onConflict: "usuario_id" });
       fallar(error);
+    },
+
+    async subirFondo(imagen) {
+      // Un nombre nuevo cada vez: así ningún dispositivo se queda con la imagen vieja en caché.
+      const ruta = `fondo-${Date.now()}.jpg`;
+      const { error } = await db.storage.from(BUCKET_FONDOS).upload(ruta, imagen, { contentType: imagen.type || "image/jpeg", upsert: true });
+      if (error) throw new ErrorDeDatos(error.message, "storage");
+      return db.storage.from(BUCKET_FONDOS).getPublicUrl(ruta).data.publicUrl;
+    },
+
+    async borrarFondo(url) {
+      const ruta = url.split(`/${BUCKET_FONDOS}/`)[1]?.split("?")[0];
+      if (ruta) await db.storage.from(BUCKET_FONDOS).remove([ruta]);
     },
 
     async categorias() {

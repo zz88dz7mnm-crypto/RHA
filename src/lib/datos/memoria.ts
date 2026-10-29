@@ -13,6 +13,8 @@ export function repositorioEnMemoria(inicial?: Partial<Estado>): Repositorio {
   return {
     ajustes: async () => c(e.ajustes),
     guardarAjustes: async (x) => void (e.ajustes = { ...e.ajustes, ...x }),
+    subirFondo: async (imagen) => URL.createObjectURL(imagen),
+    borrarFondo: async () => {},
     categorias: async () => c(e.categorias),
     guardarCategoria: async (x) => void (e.categorias = reemplazar(e.categorias, [x])),
     borrarCategoria: async (id) => {

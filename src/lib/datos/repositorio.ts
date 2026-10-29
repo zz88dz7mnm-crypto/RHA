@@ -9,6 +9,10 @@ export type Suscripcion = { endpoint: string; p256dh: string; auth: string; disp
 export interface Repositorio {
   ajustes(): Promise<Ajustes>;
   guardarAjustes(cambios: Partial<Ajustes>): Promise<void>;
+  /** Sube una imagen de fondo y devuelve su dirección pública. */
+  subirFondo(imagen: Blob): Promise<string>;
+  /** Borra del almacenamiento una imagen de fondo que ya no se usa. */
+  borrarFondo(url: string): Promise<void>;
 
   categorias(): Promise<Categoria[]>;
   guardarCategoria(c: Categoria): Promise<void>;

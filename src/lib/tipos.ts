@@ -65,6 +65,8 @@ export type Ajustes = {
   horaResumen: string;
   /** Domingo a las 21:00. */
   resumenSemanal: boolean;
+  /** Imagen de fondo elegida por el usuario (dirección pública en Supabase Storage). Sin imagen, el fondo ambiental. */
+  fondo: string | null;
 };
 
-export const AJUSTES_INICIALES: Ajustes = { horaTareas: "09:00", resumenDiario: true, horaResumen: "08:00", resumenSemanal: true };
+export const AJUSTES_INICIALES: Ajustes = { horaTareas: "09:00", resumenDiario: true, horaResumen: "08:00", resumenSemanal: true, fondo: null };

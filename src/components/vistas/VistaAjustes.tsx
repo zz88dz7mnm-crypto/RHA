@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { nuevoId, useDatos } from "@/lib/rha";
+import { achicarImagen } from "@/lib/imagen";
 import { useTema, type Preferencia } from "@/lib/tema";
 import type { Categoria } from "@/lib/tipos";
 import { CAMPO } from "../Hoja";
@@ -20,6 +21,8 @@ export function VistaAjustes() {
     <>
       <Encabezado titulo="Ajustes" />
       <div className="grid grid-cols-1 gap-4">
+        <ElegirFondo />
+
         <Tarjeta className="grid gap-3">
           <h2 className="text-[17px] font-bold">Notificaciones</h2>
           <Notificaciones />
@@ -199,6 +202,90 @@ function Categorias() {
           </div>
         </div>
       )}
+      {error && (
+        <p role="alert" className="text-[14px] text-rojo">
+          {error}
+        </p>
+      )}
+    </Tarjeta>
+  );
+}
+
+/** Cargar una imagen propia de fondo (se achica antes de subirla) o volver al fondo ambiental. */
+function ElegirFondo() {
+  const { ajustes, guardarAjustes, repo } = useDatos();
+  const [ocupado, setOcupado] = useState(false);
+  const [error, setError] = useState("");
+
+  async function cargar(archivo: File | undefined) {
+    if (!archivo) return;
+    setOcupado(true);
+    setError("");
+    try {
+      const imagen = await achicarImagen(archivo);
+      const url = await repo.subirFondo(imagen);
+      const anterior = ajustes.fondo;
+      guardarAjustes({ fondo: url });
+      if (anterior) void repo.borrarFondo(anterior).catch(() => {});
+    } catch (fallo) {
+      setError(
+        fallo instanceof Error && fallo.message === "No es una imagen."
+          ? "Ese archivo no es una imagen."
+          : "No pude subir la imagen. Revisá la conexión (y que esté corrido el SQL nuevo de RHA) y probá de nuevo.",
+      );
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  function quitar() {
+    const anterior = ajustes.fondo;
+    guardarAjustes({ fondo: null });
+    if (anterior) void repo.borrarFondo(anterior).catch(() => {});
+  }
+
+  return (
+    <Tarjeta className="grid gap-3">
+      <h2 className="text-[17px] font-bold">Fondo</h2>
+      <div className="flex items-center gap-4">
+        <div className="relative h-24 w-16 shrink-0 overflow-hidden rounded-xl border border-linea bg-tinta/5">
+          {ajustes.fondo ? (
+            // eslint-disable-next-line @next/next/no-img-element -- vista previa de la imagen del usuario
+            <img src={ajustes.fondo} alt="Fondo actual" className="size-full object-cover" />
+          ) : (
+            <span className="grid size-full place-items-center px-1 text-center text-[11px] text-tinta-tenue">Ambiental</span>
+          )}
+        </div>
+        <div className="grid min-w-0 gap-2">
+          <p className="text-[14px] text-tinta-suave">
+            {ajustes.fondo
+              ? "Tu imagen, con un velo para que se lea todo. Se ve igual en SIVA y en tus otros dispositivos."
+              : "El fondo ambiental. Podés poner una foto tuya."}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <label
+              className={`inline-flex h-10 cursor-pointer items-center rounded-full bg-acento px-4 text-[15px] font-semibold text-sobre-acento ${ocupado ? "opacity-60" : ""}`}
+            >
+              {ocupado ? "Subiendo…" : ajustes.fondo ? "Cambiar imagen" : "Cargar imagen"}
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                disabled={ocupado}
+                onChange={(e) => {
+                  void cargar(e.target.files?.[0]);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            {ajustes.fondo && (
+              <Boton variante="secundario" className="h-10 text-[15px]" onClick={quitar} disabled={ocupado}>
+                Quitar
+              </Boton>
+            )}
+          </div>
+        </div>
+      </div>
       {error && (
         <p role="alert" className="text-[14px] text-rojo">
           {error}

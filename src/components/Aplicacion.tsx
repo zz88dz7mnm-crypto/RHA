@@ -10,6 +10,7 @@ import { hoyEn } from "@/lib/fechas";
 import { USUARIO } from "@/lib/usuario";
 import { ProveedorRha, useRha } from "@/lib/rha";
 import { Logo } from "./iconos";
+import { FondoPersonal } from "./FondoPersonal";
 import { Marco } from "./Marco";
 import { Boton } from "./ui";
 
@@ -72,5 +73,10 @@ function ConDatos({ children }: { children: React.ReactNode }) {
       </main>
     );
   }
-  return <Marco>{children}</Marco>;
+  return (
+    <>
+      <FondoPersonal url={carga.ajustes.fondo} />
+      <Marco>{children}</Marco>
+    </>
+  );
 }

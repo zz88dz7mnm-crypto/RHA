@@ -210,6 +210,24 @@ create trigger rha_registros_auditar after update or delete on public.rha_regist
   for each row when (old.fecha < current_date - 1)
   execute function public.rha_auditar();
 
+-- ─────────────────────── Imagen de fondo ───────────────────
+-- La foto que el usuario elige de fondo. Se guarda en Storage (bucket "fondos", público y solo imágenes
+-- de hasta 5 MB) y su dirección queda en rha_ajustes.fondo. SIVA la lee de ahí.
+alter table public.rha_ajustes add column if not exists fondo text check (char_length(fondo) <= 1000);
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('fondos', 'fondos', true, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update set public = true, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists fondos_ver on storage.objects;
+create policy fondos_ver on storage.objects for select to anon, authenticated using (bucket_id = 'fondos');
+drop policy if exists fondos_subir on storage.objects;
+create policy fondos_subir on storage.objects for insert to anon, authenticated with check (bucket_id = 'fondos');
+drop policy if exists fondos_cambiar on storage.objects;
+create policy fondos_cambiar on storage.objects for update to anon, authenticated using (bucket_id = 'fondos') with check (bucket_id = 'fondos');
+drop policy if exists fondos_borrar on storage.objects;
+create policy fondos_borrar on storage.objects for delete to anon, authenticated using (bucket_id = 'fondos');
+
 -- ─────────────────────── Modo abierto ──────────────────────
 -- Sin login: las tablas no dependen de usuarios de Supabase. Si se habían creado con login,
 -- se sueltan de auth.users y toman el id fijo por defecto.

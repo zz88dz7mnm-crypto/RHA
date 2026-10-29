@@ -29,6 +29,8 @@
 
 /* Variables propias del vidrio y la luz de fondo, que cambian con el tema. */
 :root {
+  /* Encima de la imagen de fondo del usuario, para que se lea lo de adelante. */
+  --velo-fondo: linear-gradient(rgb(242 243 247 / 0.55), rgb(242 243 247 / 0.55));
   --vidrio-arriba: rgb(255 255 255 / 0.76);
   --vidrio-abajo: rgb(255 255 255 / 0.56);
   --vidrio-borde: rgb(255 255 255 / 0.72);
@@ -62,6 +64,7 @@
   --color-grafico: #67a9ff;
   --color-agua: #5fd4c8;
   --color-grilla: rgb(220 232 245 / 0.08);
+  --velo-fondo: radial-gradient(120% 90% at 50% 40%, rgb(9 11 15 / 0.35), rgb(9 11 15 / 0.7));
 
   /* Material: tinte #263342 → #151C25, borde frío muy tenue y un filo de luz arriba. */
   --vidrio-arriba: rgb(38 51 66 / 0.6);

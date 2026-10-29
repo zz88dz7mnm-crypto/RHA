@@ -74,7 +74,7 @@ export async function datosDeUsuario(db: SupabaseClient, usuarioId: string, hoy:
   for (const r of [aj, act, hab, pau, reg]) if (r.error) throw r.error;
   const a = aj.data;
   const ajustes: Ajustes = a
-    ? { horaTareas: hora(a.hora_tareas)!, resumenDiario: a.resumen_diario, horaResumen: hora(a.hora_resumen)!, resumenSemanal: a.resumen_semanal }
+    ? { horaTareas: hora(a.hora_tareas)!, resumenDiario: a.resumen_diario, horaResumen: hora(a.hora_resumen)!, resumenSemanal: a.resumen_semanal, fondo: null }
     : AJUSTES_INICIALES;
   return {
     zona: (a?.zona_horaria as string | undefined) ?? "America/Argentina/Buenos_Aires",
