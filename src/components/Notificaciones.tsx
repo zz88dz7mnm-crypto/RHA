@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/datos/cliente";
 import { useDatos } from "@/lib/rha";
 import { Boton } from "./ui";
 
@@ -103,8 +102,7 @@ export function Notificaciones() {
     setOcupado(true);
     setMensaje("");
     try {
-      const { data } = await supabase().auth.getSession();
-      const r = await fetch("/api/avisos/prueba", { method: "POST", headers: { authorization: `Bearer ${data.session?.access_token ?? ""}` } });
+      const r = await fetch("/api/avisos/prueba", { method: "POST" });
       const cuerpo = (await r.json().catch(() => ({}))) as { error?: string };
       setMensaje(r.ok ? "Mandé una notificación de prueba. Si no llega en unos segundos, avisame." : (cuerpo.error ?? "No se pudo mandar la prueba."));
     } catch {

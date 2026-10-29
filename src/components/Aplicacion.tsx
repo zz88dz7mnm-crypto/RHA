@@ -7,13 +7,13 @@ import { datosDeMuestra, repositorioEnMemoria } from "@/lib/datos/memoria";
 import type { Repositorio } from "@/lib/datos/repositorio";
 import { repositorioSupabase } from "@/lib/datos/supabase";
 import { hoyEn } from "@/lib/fechas";
+import { USUARIO } from "@/lib/usuario";
 import { ProveedorRha, useRha } from "@/lib/rha";
 import { Logo } from "./iconos";
-import { Ingreso } from "./Ingreso";
 import { Marco } from "./Marco";
 import { Boton } from "./ui";
 
-type Estado = { paso: "cargando" } | { paso: "sin_sesion" } | { paso: "lista"; clave: string; repo: Repositorio; salir?: () => void };
+type Estado = { paso: "cargando" } | { paso: "lista"; clave: string; repo: Repositorio };
 
 /** Solo en desarrollo: /demo deja esta marca y la app usa datos de muestra en memoria. */
 export const MARCA_DEMO = "rha-demo";
@@ -35,35 +35,22 @@ export function Espera() {
   );
 }
 
-/** Decide qué mostrar: la espera, la entrada, o la app con la sesión iniciada. Vive en el layout: no se rearma al navegar. */
+/** Abre la app directo, sin usuario ni contraseña. Vive en el layout: no se rearma al navegar. */
 export function Aplicacion({ children }: { children: React.ReactNode }) {
   const ruta = usePathname();
   const [estado, setEstado] = useState<Estado>({ paso: "cargando" });
 
   useEffect(() => {
-    if (modoDemo()) {
-      // La marca de demo solo existe en el navegador: no se puede decidir antes de hidratar.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setEstado({ paso: "lista", clave: "demo", repo: repositorioEnMemoria(datosDeMuestra(hoyEn())) });
-      return;
-    }
-    const db = supabase();
-    const { data } = db.auth.onAuthStateChange((_evento, sesion) => {
-      const usuarioId = sesion?.user.id;
-      setEstado((previo) => {
-        if (!usuarioId) return { paso: "sin_sesion" };
-        if (previo.paso === "lista" && previo.clave === usuarioId) return previo;
-        return { paso: "lista", clave: usuarioId, repo: repositorioSupabase(db, usuarioId), salir: () => void db.auth.signOut() };
-      });
-    });
-    return () => data.subscription.unsubscribe();
+    // Lo de la demo solo se sabe en el navegador: se decide recién después de hidratar.
+    const repo = modoDemo() ? repositorioEnMemoria(datosDeMuestra(hoyEn())) : repositorioSupabase(supabase(), USUARIO);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setEstado({ paso: "lista", clave: modoDemo() ? "demo" : USUARIO, repo });
   }, []);
 
   if (ruta === "/demo") return children;
   if (estado.paso === "cargando") return <Espera />;
-  if (estado.paso === "sin_sesion") return <Ingreso />;
   return (
-    <ProveedorRha key={estado.clave} repo={estado.repo} salir={estado.salir}>
+    <ProveedorRha key={estado.clave} repo={estado.repo}>
       <ConDatos>{children}</ConDatos>
     </ProveedorRha>
   );

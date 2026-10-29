@@ -1,15 +1,12 @@
 import { clienteAdmin, configurarPush, mandar, suscripciones } from "@/lib/servidor/envio";
+import { USUARIO } from "@/lib/usuario";
 
-/** Manda una notificación de prueba a los dispositivos del usuario que la pide (con su sesión). */
+/** Manda una notificación de prueba a los dispositivos con notificaciones activadas. */
 export async function POST(request: Request) {
-  const token = request.headers.get("authorization")?.replace(/^Bearer /, "");
-  if (!token) return Response.json({ error: "falta la sesión" }, { status: 401 });
   try {
     configurarPush(new URL(request.url).origin);
     const db = clienteAdmin();
-    const { data, error } = await db.auth.getUser(token);
-    if (error || !data.user) return Response.json({ error: "sesión inválida" }, { status: 401 });
-    const subs = await suscripciones(db, data.user.id);
+    const subs = await suscripciones(db, USUARIO);
     if (!subs.length) return Response.json({ error: "no hay dispositivos con notificaciones activadas" }, { status: 404 });
     const enviados = await mandar(db, subs, { titulo: "RHA", cuerpo: "¡Las notificaciones funcionan!", url: "/" });
     return Response.json({ enviados });

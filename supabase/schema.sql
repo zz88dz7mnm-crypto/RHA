@@ -1,10 +1,12 @@
 -- RHA · esquema de la base de datos
 -- Todas las tablas empiezan con rha_. Pegar completo en Supabase → SQL Editor → Run.
+-- La app no tiene usuario ni contraseña: es de una sola persona y todo se guarda con un id fijo.
+-- Ojo: cualquiera que tenga la dirección de la app (o la clave pública) puede ver y cambiar los datos.
 -- Se puede correr más de una vez sin romper nada.
 
 -- ───────────────────────── Ajustes ─────────────────────────
 create table if not exists public.rha_ajustes (
-  usuario_id uuid primary key default auth.uid() references auth.users (id) on delete cascade,
+  usuario_id uuid primary key default '00000000-0000-0000-0000-000000000001'::uuid,
   zona_horaria text not null default 'America/Argentina/Buenos_Aires',
   hora_tareas time not null default '09:00',
   resumen_diario boolean not null default true,
@@ -17,7 +19,7 @@ create table if not exists public.rha_ajustes (
 -- ──────────────────────── Categorías ───────────────────────
 create table if not exists public.rha_categorias (
   id uuid primary key default gen_random_uuid(),
-  usuario_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  usuario_id uuid not null default '00000000-0000-0000-0000-000000000001'::uuid,
   nombre text not null check (char_length(nombre) between 1 and 40),
   color text not null check (color ~ '^#[0-9a-fA-F]{6}$'),
   orden smallint not null default 0,
@@ -30,7 +32,7 @@ create unique index if not exists rha_categorias_nombre on public.rha_categorias
 -- Con hora de inicio es una actividad con horario; sin hora, una tarea del día.
 create table if not exists public.rha_actividades (
   id uuid primary key,
-  usuario_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  usuario_id uuid not null default '00000000-0000-0000-0000-000000000001'::uuid,
   titulo text not null check (char_length(titulo) between 1 and 160),
   fecha date not null,
   inicio time,
@@ -56,7 +58,7 @@ create unique index if not exists rha_actividades_origen on public.rha_actividad
 -- ───────────────────────── Hábitos ─────────────────────────
 create table if not exists public.rha_habitos (
   id uuid primary key,
-  usuario_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  usuario_id uuid not null default '00000000-0000-0000-0000-000000000001'::uuid,
   nombre text not null check (char_length(nombre) between 1 and 80),
   tipo text not null check (tipo in ('dias', 'semanal')),
   dias smallint[] not null default '{}',
@@ -81,7 +83,7 @@ alter table public.rha_habitos add column if not exists medicion text check (med
 -- Mientras dura una pausa no se cuentan incumplimientos. "hasta" es el día en que se retomó.
 create table if not exists public.rha_pausas (
   id uuid primary key,
-  usuario_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  usuario_id uuid not null default '00000000-0000-0000-0000-000000000001'::uuid,
   habito_id uuid not null references public.rha_habitos (id) on delete cascade,
   desde date not null,
   hasta date,
@@ -92,7 +94,7 @@ create index if not exists rha_pausas_habito on public.rha_pausas (habito_id);
 
 -- Un registro por hábito y día: el historial diario se conserva.
 create table if not exists public.rha_registros (
-  usuario_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  usuario_id uuid not null default '00000000-0000-0000-0000-000000000001'::uuid,
   habito_id uuid not null references public.rha_habitos (id) on delete cascade,
   fecha date not null,
   estado text not null check (estado in ('completado', 'parcial', 'no_completado')),
@@ -110,7 +112,7 @@ alter table public.rha_registros add column if not exists valor numeric(6, 2) ch
 -- Un teléfono o compu donde el usuario activó las notificaciones.
 create table if not exists public.rha_suscripciones (
   id uuid primary key default gen_random_uuid(),
-  usuario_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  usuario_id uuid not null default '00000000-0000-0000-0000-000000000001'::uuid,
   endpoint text not null unique,
   p256dh text not null,
   auth text not null,
@@ -120,7 +122,7 @@ create table if not exists public.rha_suscripciones (
 
 -- Lo que ya se mandó, para no repetir aunque el servidor reintente. Solo lo escribe el servidor.
 create table if not exists public.rha_avisos_enviados (
-  usuario_id uuid not null references auth.users (id) on delete cascade,
+  usuario_id uuid not null default '00000000-0000-0000-0000-000000000001'::uuid,
   clave text not null,
   enviado_en timestamptz not null default now(),
   primary key (usuario_id, clave)
@@ -208,58 +210,45 @@ create trigger rha_registros_auditar after update or delete on public.rha_regist
   for each row when (old.fecha < current_date - 1)
   execute function public.rha_auditar();
 
+-- ─────────────────────── Modo abierto ──────────────────────
+-- Sin login: las tablas no dependen de usuarios de Supabase. Si se habían creado con login,
+-- se sueltan de auth.users y toman el id fijo por defecto.
+do $$
+declare t text;
+begin
+  foreach t in array array['rha_ajustes', 'rha_categorias', 'rha_actividades', 'rha_habitos', 'rha_pausas', 'rha_registros', 'rha_suscripciones', 'rha_avisos_enviados'] loop
+    execute format('alter table public.%1$s drop constraint if exists %1$s_usuario_id_fkey', t);
+    execute format('alter table public.%s alter column usuario_id set default ''00000000-0000-0000-0000-000000000001''::uuid', t);
+  end loop;
+end;
+$$;
+
 -- ───────────────────────── Permisos ────────────────────────
+-- La clave pública (anon) puede leer y escribir todo; los avisos ya enviados y la auditoría, solo leer.
 do $$
 declare t text;
 begin
   foreach t in array array['rha_ajustes', 'rha_categorias', 'rha_actividades', 'rha_habitos', 'rha_pausas', 'rha_registros', 'rha_suscripciones', 'rha_avisos_enviados', 'rha_auditoria'] loop
     execute format('alter table public.%s enable row level security', t);
+    execute format('drop policy if exists %1$s_propio on public.%1$s', t);
+    execute format('drop policy if exists %1$s_abierto on public.%1$s', t);
   end loop;
   foreach t in array array['rha_ajustes', 'rha_categorias', 'rha_actividades', 'rha_habitos', 'rha_pausas', 'rha_registros', 'rha_suscripciones'] loop
-    execute format('drop policy if exists %1$s_propio on public.%1$s', t);
-    execute format('create policy %1$s_propio on public.%1$s for all to authenticated using (usuario_id = (select auth.uid())) with check (usuario_id = (select auth.uid()))', t);
+    execute format('create policy %1$s_abierto on public.%1$s for all to anon, authenticated using (true) with check (true)', t);
+  end loop;
+  foreach t in array array['rha_avisos_enviados', 'rha_auditoria'] loop
+    execute format('create policy %1$s_abierto on public.%1$s for select to anon, authenticated using (true)', t);
   end loop;
 end;
 $$;
 
--- Las referencias (categoría, hábito) tienen que ser del mismo usuario.
-drop policy if exists rha_actividades_propio on public.rha_actividades;
-create policy rha_actividades_propio on public.rha_actividades for all to authenticated
-  using (usuario_id = (select auth.uid()))
-  with check (
-    usuario_id = (select auth.uid())
-    and (categoria_id is null or exists (select 1 from public.rha_categorias c where c.id = categoria_id and c.usuario_id = (select auth.uid())))
-  );
-
-drop policy if exists rha_habitos_propio on public.rha_habitos;
-create policy rha_habitos_propio on public.rha_habitos for all to authenticated
-  using (usuario_id = (select auth.uid()))
-  with check (
-    usuario_id = (select auth.uid())
-    and (categoria_id is null or exists (select 1 from public.rha_categorias c where c.id = categoria_id and c.usuario_id = (select auth.uid())))
-  );
-
-drop policy if exists rha_registros_propio on public.rha_registros;
-create policy rha_registros_propio on public.rha_registros for all to authenticated
-  using (usuario_id = (select auth.uid()))
-  with check (usuario_id = (select auth.uid()) and exists (select 1 from public.rha_habitos h where h.id = habito_id and h.usuario_id = (select auth.uid())));
-
-drop policy if exists rha_pausas_propio on public.rha_pausas;
-create policy rha_pausas_propio on public.rha_pausas for all to authenticated
-  using (usuario_id = (select auth.uid()))
-  with check (usuario_id = (select auth.uid()) and exists (select 1 from public.rha_habitos h where h.id = habito_id and h.usuario_id = (select auth.uid())));
-
 drop policy if exists rha_auditoria_ver on public.rha_auditoria;
-create policy rha_auditoria_ver on public.rha_auditoria for select to authenticated using (usuario_id = (select auth.uid()));
-
 drop policy if exists rha_avisos_ver on public.rha_avisos_enviados;
-create policy rha_avisos_ver on public.rha_avisos_enviados for select to authenticated using (usuario_id = (select auth.uid()));
 
 revoke all on public.rha_ajustes, public.rha_categorias, public.rha_actividades, public.rha_habitos, public.rha_pausas,
   public.rha_registros, public.rha_suscripciones, public.rha_avisos_enviados, public.rha_auditoria from anon, authenticated;
-grant select, insert, update on public.rha_ajustes to authenticated;
-grant select, insert, update, delete on public.rha_categorias, public.rha_actividades, public.rha_habitos, public.rha_pausas,
-  public.rha_registros, public.rha_suscripciones to authenticated;
-grant select on public.rha_avisos_enviados, public.rha_auditoria to authenticated;
+grant select, insert, update, delete on public.rha_ajustes, public.rha_categorias, public.rha_actividades, public.rha_habitos, public.rha_pausas,
+  public.rha_registros, public.rha_suscripciones to anon, authenticated;
+grant select on public.rha_avisos_enviados, public.rha_auditoria to anon, authenticated;
 
 revoke all on function public.rha_auditar() from public, anon, authenticated;
