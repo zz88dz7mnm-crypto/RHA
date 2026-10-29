@@ -6,15 +6,14 @@ import { achicarImagen } from "@/lib/imagen";
 import { useTema, type Preferencia } from "@/lib/tema";
 import type { Categoria } from "@/lib/tipos";
 import { CAMPO } from "../Hoja";
+import { AjustesAvisos, EstadoServidor } from "../AjustesAvisos";
 import { Notificaciones } from "../Notificaciones";
 import { Boton, Encabezado, Segmentos, Tarjeta } from "../ui";
-
-const CAMPO_HORA = CAMPO.replace("w-full", "w-36 shrink-0");
 
 const COLORES = ["#ff2d55", "#ff6b00", "#ffcc00", "#34c759", "#30b0c7", "#0a84ff", "#5e5ce6", "#af52de", "#a2845e", "#8e8e93"];
 
 export function VistaAjustes() {
-  const { ajustes, guardarAjustes, salir } = useDatos();
+  const { salir } = useDatos();
   const [tema, setTema] = useTema();
 
   return (
@@ -26,55 +25,11 @@ export function VistaAjustes() {
         <Tarjeta className="grid gap-3">
           <h2 className="text-[17px] font-bold">Notificaciones</h2>
           <Notificaciones />
+          <h3 className="mt-1 text-[13px] font-semibold tracking-[0.06em] text-tinta-tenue uppercase">Servidor</h3>
+          <EstadoServidor />
         </Tarjeta>
 
-        <Tarjeta className="grid gap-4">
-          <h2 className="text-[17px] font-bold">Recordatorios</h2>
-          <label className="flex items-center justify-between gap-3 text-[15px]">
-            Hora de las tareas sin horario
-            <input
-              type="time"
-              value={ajustes.horaTareas}
-              onChange={(e) => e.target.value && guardarAjustes({ horaTareas: e.target.value })}
-              className={CAMPO_HORA}
-            />
-          </label>
-          <label className="flex items-center justify-between gap-3 text-[15px]">
-            <span>
-              Resumen del día
-              <span className="block text-[13px] text-tinta-tenue">Actividades y hábitos de hoy.</span>
-            </span>
-            <input
-              type="checkbox"
-              checked={ajustes.resumenDiario}
-              onChange={(e) => guardarAjustes({ resumenDiario: e.target.checked })}
-              className="size-5 accent-[var(--color-acento)]"
-            />
-          </label>
-          {ajustes.resumenDiario && (
-            <label className="flex items-center justify-between gap-3 text-[15px]">
-              A las
-              <input
-                type="time"
-                value={ajustes.horaResumen}
-                onChange={(e) => e.target.value && guardarAjustes({ horaResumen: e.target.value })}
-                className={CAMPO_HORA}
-              />
-            </label>
-          )}
-          <label className="flex items-center justify-between gap-3 text-[15px]">
-            <span>
-              Resumen semanal
-              <span className="block text-[13px] text-tinta-tenue">Domingo a las 21:00: cómo te fue y a planificar la próxima.</span>
-            </span>
-            <input
-              type="checkbox"
-              checked={ajustes.resumenSemanal}
-              onChange={(e) => guardarAjustes({ resumenSemanal: e.target.checked })}
-              className="size-5 accent-[var(--color-acento)]"
-            />
-          </label>
-        </Tarjeta>
+        <AjustesAvisos />
 
         <Categorias />
 

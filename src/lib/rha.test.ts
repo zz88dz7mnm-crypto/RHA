@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { delDia, fechasRepetidas, minutosPlanificados, ordenar, propuesta, resumenDeTareas, solapamientos, textoDuracion, vencidas } from "./agenda";
-import { avisosPendientes, localEn, momento } from "./avisos";
+import { avisosPendientes, enSilencio, localEn, momento } from "./avisos";
 import { adherencia, avanceSemanal, diaDeSemana, enPausa, programadoEn, racha, textoFrecuencia } from "./habitos";
 import { SUGERIDOS } from "./sugeridos";
 import { AJUSTES_INICIALES, type Actividad, type Habito, type Pausa, type Registro } from "./tipos";
@@ -202,5 +202,24 @@ describe("avisos", () => {
   it("manda el resumen semanal el domingo a las 21", () => {
     const avisos = avisosPendientes(base, "2026-10-18T20:55", "2026-10-18T21:05");
     expect(avisos.map((a) => a.clave)).toEqual(["semana:2026-10-12"]);
+  });
+
+  it("respeta los interruptores de cada tipo de aviso", () => {
+    const con = (cambios: Partial<typeof AJUSTES_INICIALES>) => ({ ...base, ajustes: { ...AJUSTES_INICIALES, ...cambios } });
+    const claves = (c: Partial<typeof AJUSTES_INICIALES>) => avisosPendientes(con(c), "2026-10-12T17:40", "2026-10-12T17:50").map((a) => a.clave);
+    expect(claves({ avisosActividades: false })).toEqual(["hab:creatina:2026-10-12", "hab:leer:2026-10-12"]);
+    expect(claves({ avisosSuplementos: false })).toEqual(["act:clase:2026-10-12T17:45", "hab:leer:2026-10-12"]);
+    expect(claves({ avisosHabitos: false })).toEqual(["act:clase:2026-10-12T17:45", "hab:creatina:2026-10-12"]);
+    expect(avisosPendientes(con({ horaSemanal: "10:00" }), "2026-10-18T09:55", "2026-10-18T10:05").map((a) => a.clave)).toEqual(["semana:2026-10-12"]);
+  });
+
+  it("no avisa en el horario de silencio, aunque cruce la medianoche", () => {
+    expect(enSilencio("2026-10-12T23:30", "23:00", "07:00")).toBe(true);
+    expect(enSilencio("2026-10-12T06:59", "23:00", "07:00")).toBe(true);
+    expect(enSilencio("2026-10-12T07:00", "23:00", "07:00")).toBe(false);
+    expect(enSilencio("2026-10-12T14:00", "13:00", "15:00")).toBe(true);
+    expect(enSilencio("2026-10-12T14:00", null, null)).toBe(false);
+    const callado = { ...base, ajustes: { ...AJUSTES_INICIALES, silencioDesde: "17:00", silencioHasta: "18:00" } };
+    expect(avisosPendientes(callado, "2026-10-12T17:40", "2026-10-12T17:50")).toEqual([]);
   });
 });

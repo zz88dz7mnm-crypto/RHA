@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { avisosPendientes, localEn } from "@/lib/avisos";
 import { clienteAdmin, configurarPush, datosDeUsuario, mandar, suscripciones } from "@/lib/servidor/envio";
+import { USUARIO } from "@/lib/usuario";
 
 /** Cuánto hacia atrás mira cada pasada: si el reloj de la base se atrasa unos minutos, el aviso igual sale (una sola vez). */
 const VENTANA_MS = 10 * 60_000;
@@ -25,6 +26,8 @@ export async function POST(request: Request) {
     configurarPush(new URL(request.url).origin);
     db = clienteAdmin();
     todas = await suscripciones(db);
+    // Para que Ajustes pueda mostrar que el disparador de Supabase está andando.
+    await db.from("rha_ajustes").upsert({ usuario_id: USUARIO, avisos_ultima_pasada: new Date().toISOString() }, { onConflict: "usuario_id" });
   } catch (fallo) {
     // Falta configurar algo en Vercel (claves) o la base no tiene las tablas: se dice qué.
     return Response.json({ error: (fallo as Error).message }, { status: 500 });

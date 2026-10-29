@@ -63,10 +63,30 @@ export type Ajustes = {
   horaTareas: string;
   resumenDiario: boolean;
   horaResumen: string;
-  /** Domingo a las 21:00. */
+  /** Los domingos, a horaSemanal. */
   resumenSemanal: boolean;
+  horaSemanal: string;
+  /** Interruptores por tipo de aviso. */
+  avisosActividades: boolean;
+  avisosHabitos: boolean;
+  avisosSuplementos: boolean;
+  /** Horario sin avisos ("HH:MM"), puede cruzar la medianoche. Los dos en null: sin horario de silencio. */
+  silencioDesde: string | null;
+  silencioHasta: string | null;
   /** Imagen de fondo elegida por el usuario (dirección pública en Supabase Storage). Sin imagen, el fondo ambiental. */
   fondo: string | null;
 };
 
-export const AJUSTES_INICIALES: Ajustes = { horaTareas: "09:00", resumenDiario: true, horaResumen: "08:00", resumenSemanal: true, fondo: null };
+export const AJUSTES_INICIALES: Ajustes = {
+  horaTareas: "09:00",
+  resumenDiario: true,
+  horaResumen: "08:00",
+  resumenSemanal: true,
+  horaSemanal: "21:00",
+  avisosActividades: true,
+  avisosHabitos: true,
+  avisosSuplementos: true,
+  silencioDesde: null,
+  silencioHasta: null,
+  fondo: null,
+};

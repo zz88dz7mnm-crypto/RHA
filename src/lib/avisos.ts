@@ -38,13 +38,21 @@ export function localEn(zona: string, instante: Date): string {
 
 const enVentana = (m: string, desde: string, hasta: string) => m > desde && m <= hasta;
 
+/** Si la hora de "AAAA-MM-DDTHH:MM" cae en el horario de silencio (que puede cruzar la medianoche). */
+export function enSilencio(m: string, desde: string | null, hasta: string | null): boolean {
+  if (!desde || !hasta || desde === hasta) return false;
+  const h = m.slice(11, 16);
+  return desde < hasta ? h >= desde && h < hasta : h >= desde || h < hasta;
+}
+
 export function avisosPendientes(d: DatosAvisos, desde: string, hasta: string): Aviso[] {
   const avisos: { m: string; aviso: Aviso }[] = [];
   const fechas = [...new Set([sumarDias(desde.slice(0, 10), -1), desde.slice(0, 10), hasta.slice(0, 10), sumarDias(hasta.slice(0, 10), 1)])];
 
-  for (const a of d.actividades) {
+  const aj = d.ajustes;
+  for (const a of aj.avisosActividades ? d.actividades : []) {
     if (a.estado !== "pendiente" || a.recordatorio === null || !fechas.includes(a.fecha)) continue;
-    const m = a.inicio ? momento(a.fecha, aMinutos(a.inicio) - a.recordatorio) : momento(a.fecha, aMinutos(d.ajustes.horaTareas));
+    const m = a.inicio ? momento(a.fecha, aMinutos(a.inicio) - a.recordatorio) : momento(a.fecha, aMinutos(aj.horaTareas));
     if (!enVentana(m, desde, hasta)) continue;
     const cuando = a.inicio ? (a.recordatorio === 0 ? `Ahora, ${a.inicio}` : `A las ${a.inicio} (en ${a.recordatorio} min)`) : "Tarea para hoy";
     avisos.push({ m, aviso: { clave: `act:${a.id}:${m}`, titulo: a.titulo, cuerpo: cuando, url: "/" } });
@@ -53,6 +61,7 @@ export function avisosPendientes(d: DatosAvisos, desde: string, hasta: string): 
   for (const fecha of fechas) {
     for (const h of d.habitos) {
       if (h.estado !== "activo" || !h.hora || !programadoEn(h, fecha, d.pausas)) continue;
+      if (!(h.suplemento ? aj.avisosSuplementos : aj.avisosHabitos)) continue;
       const m = momento(fecha, aMinutos(h.hora));
       if (!enVentana(m, desde, hasta)) continue;
       if (registroDe(d.registros, h.id, fecha)?.estado === "completado") continue;
@@ -65,8 +74,8 @@ export function avisosPendientes(d: DatosAvisos, desde: string, hasta: string): 
       avisos.push({ m, aviso: { clave: `hab:${h.id}:${fecha}`, titulo: h.nombre, cuerpo, url: "/" } });
     }
 
-    if (d.ajustes.resumenDiario) {
-      const m = momento(fecha, aMinutos(d.ajustes.horaResumen));
+    if (aj.resumenDiario) {
+      const m = momento(fecha, aMinutos(aj.horaResumen));
       if (enVentana(m, desde, hasta)) {
         const actividades = delDia(d.actividades, fecha).filter((a) => a.estado === "pendiente");
         const habitos = d.habitos.filter((h) => h.estado === "activo" && h.tipo === "dias" && programadoEn(h, fecha, d.pausas));
@@ -87,9 +96,9 @@ export function avisosPendientes(d: DatosAvisos, desde: string, hasta: string): 
       }
     }
 
-    // Resumen semanal: domingo a las 21:00.
-    if (d.ajustes.resumenSemanal && lunesDe(fecha) === sumarDias(fecha, -6)) {
-      const m = momento(fecha, 21 * 60);
+    // Resumen semanal: los domingos.
+    if (aj.resumenSemanal && lunesDe(fecha) === sumarDias(fecha, -6)) {
+      const m = momento(fecha, aMinutos(aj.horaSemanal));
       if (enVentana(m, desde, hasta)) {
         const lunes = lunesDe(fecha);
         let completados = 0;
@@ -107,5 +116,9 @@ export function avisosPendientes(d: DatosAvisos, desde: string, hasta: string): 
     }
   }
 
-  return avisos.sort((a, b) => a.m.localeCompare(b.m)).map((x) => x.aviso);
+  // En el horario de silencio no sale nada (tampoco más tarde: no se acumulan).
+  return avisos
+    .filter((x) => !enSilencio(x.m, aj.silencioDesde, aj.silencioHasta))
+    .sort((a, b) => a.m.localeCompare(b.m))
+    .map((x) => x.aviso);
 }

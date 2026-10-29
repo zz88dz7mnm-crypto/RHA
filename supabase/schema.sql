@@ -228,6 +228,17 @@ create policy fondos_cambiar on storage.objects for update to anon, authenticate
 drop policy if exists fondos_borrar on storage.objects;
 create policy fondos_borrar on storage.objects for delete to anon, authenticated using (bucket_id = 'fondos');
 
+-- ─────────────────────── Notificaciones ────────────────────
+-- Qué avisos mandar, el horario del resumen semanal, un horario de silencio y la última vez que
+-- pasó el disparador de pg_cron (para que Ajustes muestre si está andando).
+alter table public.rha_ajustes add column if not exists hora_semanal time not null default '21:00';
+alter table public.rha_ajustes add column if not exists avisos_actividades boolean not null default true;
+alter table public.rha_ajustes add column if not exists avisos_habitos boolean not null default true;
+alter table public.rha_ajustes add column if not exists avisos_suplementos boolean not null default true;
+alter table public.rha_ajustes add column if not exists silencio_desde time;
+alter table public.rha_ajustes add column if not exists silencio_hasta time;
+alter table public.rha_ajustes add column if not exists avisos_ultima_pasada timestamptz;
+
 -- ─────────────────────── Modo abierto ──────────────────────
 -- Sin login: las tablas no dependen de usuarios de Supabase. Si se habían creado con login,
 -- se sueltan de auth.users y toman el id fijo por defecto.

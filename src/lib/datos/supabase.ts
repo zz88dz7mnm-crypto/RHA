@@ -1,5 +1,6 @@
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { AJUSTES_INICIALES, type Actividad, type Categoria, type Habito, type Registro } from "../tipos";
+import { ajustesDeFila, filaDeAjustes } from "./ajustes";
 import { ErrorDeDatos, type Repositorio } from "./repositorio";
 
 const FILAS_POR_PAGINA = 1000;
@@ -57,7 +58,7 @@ export function repositorioSupabase(db: SupabaseClient, usuarioId: string): Repo
     async ajustes() {
       const { data, error } = await db
         .from("rha_ajustes")
-        // Con "*": si todavía no se corrió el SQL que agrega "fondo", la app sigue andando sin fondo.
+        // Con "*": si todavía no se corrió el SQL nuevo, la app sigue andando con los valores iniciales.
         .select("*")
         .eq("usuario_id", usuarioId)
         .maybeSingle();
@@ -67,23 +68,11 @@ export function repositorioSupabase(db: SupabaseClient, usuarioId: string): Repo
         fallar(alta);
         return AJUSTES_INICIALES;
       }
-      return {
-        horaTareas: hora(data.hora_tareas)!,
-        resumenDiario: data.resumen_diario,
-        horaResumen: hora(data.hora_resumen)!,
-        resumenSemanal: data.resumen_semanal,
-        fondo: data.fondo ?? null,
-      };
+      return ajustesDeFila(data);
     },
 
     async guardarAjustes(c) {
-      const fila: Record<string, unknown> = { usuario_id: usuarioId };
-      if (c.horaTareas !== undefined) fila.hora_tareas = c.horaTareas;
-      if (c.resumenDiario !== undefined) fila.resumen_diario = c.resumenDiario;
-      if (c.horaResumen !== undefined) fila.hora_resumen = c.horaResumen;
-      if (c.resumenSemanal !== undefined) fila.resumen_semanal = c.resumenSemanal;
-      if (c.fondo !== undefined) fila.fondo = c.fondo;
-      const { error } = await db.from("rha_ajustes").upsert(fila, { onConflict: "usuario_id" });
+      const { error } = await db.from("rha_ajustes").upsert({ usuario_id: usuarioId, ...filaDeAjustes(c) }, { onConflict: "usuario_id" });
       fallar(error);
     },
 

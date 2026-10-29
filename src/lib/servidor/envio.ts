@@ -3,6 +3,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import webpush from "web-push";
 import { sumarDias } from "../fechas";
 import type { Aviso } from "../avisos";
+import { ajustesDeFila } from "../datos/ajustes";
 import { AJUSTES_INICIALES, type Actividad, type Ajustes, type Habito, type Pausa, type Registro } from "../tipos";
 
 /**
@@ -60,7 +61,7 @@ export async function datosDeUsuario(db: SupabaseClient, usuarioId: string, hoy:
   const desde = sumarDias(hoy, -8);
   const hasta = sumarDias(hoy, 2);
   const [aj, act, hab, pau, reg] = await Promise.all([
-    db.from("rha_ajustes").select("zona_horaria, hora_tareas, resumen_diario, hora_resumen, resumen_semanal").eq("usuario_id", usuarioId).maybeSingle(),
+    db.from("rha_ajustes").select("*").eq("usuario_id", usuarioId).maybeSingle(),
     db
       .from("rha_actividades")
       .select("id, titulo, fecha, inicio, fin, categoria_id, prioridad, estado, notas, recordatorio, serie_id")
@@ -73,9 +74,7 @@ export async function datosDeUsuario(db: SupabaseClient, usuarioId: string, hoy:
   ]);
   for (const r of [aj, act, hab, pau, reg]) if (r.error) throw r.error;
   const a = aj.data;
-  const ajustes: Ajustes = a
-    ? { horaTareas: hora(a.hora_tareas)!, resumenDiario: a.resumen_diario, horaResumen: hora(a.hora_resumen)!, resumenSemanal: a.resumen_semanal, fondo: null }
-    : AJUSTES_INICIALES;
+  const ajustes: Ajustes = a ? ajustesDeFila(a) : AJUSTES_INICIALES;
   return {
     zona: (a?.zona_horaria as string | undefined) ?? "America/Argentina/Buenos_Aires",
     ajustes,
